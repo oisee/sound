@@ -114,5 +114,5 @@ def analyze_folder(folder_path):
             print(f"Processed {filename}, saved frequencies to {output_filename}")
 
 if __name__ == "__main__":
-    folder_path = "./test_wav/"
+    folder_path = "./in_wav/"
     analyze_folder(folder_path)
