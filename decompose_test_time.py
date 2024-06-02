@@ -49,7 +49,7 @@ def analyze_waveform(file_path):
         fft_magnitude = fft_magnitude[nonzero_indices]
         fft_frequencies = fft_frequencies[nonzero_indices]
         
-        significant_indices = np.argsort(fft_magnitude)[-10:][::-1]  # Extract top 10 significant frequencies
+        significant_indices = np.argsort(fft_magnitude)[-100:][::-1]  # Extract top 10 significant frequencies
         significant_frequencies = fft_frequencies[significant_indices]
         significant_amplitudes = fft_magnitude[significant_indices]
         
@@ -103,7 +103,7 @@ def analyze_folder(folder_path):
     
     # Iterate through all files in the folder
     for filename in os.listdir(folder_path):
-        if filename.endswith(".wav"):
+        if filename.endswith("other.wav"):
             file_path = os.path.join(folder_path, filename)
             results = analyze_waveform(file_path)
             

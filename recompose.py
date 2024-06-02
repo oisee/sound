@@ -9,6 +9,8 @@ SAMPLE_RATE = 44100  # Hz
 SLICE_DURATION = 1 / 100  # seconds
 SLICE_SAMPLES = int(SAMPLE_RATE * SLICE_DURATION)
 FREQUENCY_TOLERANCE = 0.5  # Hz, tolerance for grouping similar frequencies
+LOWER_LIMIT = 110  # Hz, lower limit for frequencies
+UPPER_LIMIT = 14080  # Hz, upper limit for frequencies
 
 def read_tsv(file_path):
     """Reads a TSV file and returns a list of frequency-amplitude pairs."""
@@ -26,6 +28,10 @@ def group_frequencies(frames):
     for frame in frames:
         freqs = np.array(frame[::2])
         amps = np.array(frame[1::2])
+        
+        valid_mask = (freqs >= LOWER_LIMIT) & (freqs <= UPPER_LIMIT)
+        freqs = freqs[valid_mask]
+        amps = amps[valid_mask]
         
         grouped_freqs = []
         grouped_amps = []
@@ -57,6 +63,9 @@ def generate_audio_frame(frame, waveform='cosine', duty=0.5):
     """Generates an audio frame for the given frequency-amplitude pairs."""
     t = np.linspace(0, SLICE_DURATION, SLICE_SAMPLES, endpoint=False)
     audio_frame = np.zeros(SLICE_SAMPLES)
+    
+    if not frame:
+        return audio_frame  # Return silent frame if no valid frequencies
     
     for i in range(0, len(frame), 2):
         freq = frame[i]
@@ -94,8 +103,10 @@ def reconstruct_wav(input_folder, output_folder, waveform='cosine', duty=0.5):
             print(f"Reconstructed WAV file saved to {output_file_path}")
 
 if __name__ == "__main__":
-    input_folder = "./test_wav/tsv/"
-    output_folder = "./test_wav/rec/"
+    input_folder = "./in_wav/tsv/"
+    output_folder = "./in_wav/rec2/"
+    # input_folder = "./test_wav/tsv/"
+    # output_folder = "./test_wav/rec2/"
     waveform = 'cosine'  # or 'pulse'
     duty = 0.5  # Duty cycle for pulse waveform
     
