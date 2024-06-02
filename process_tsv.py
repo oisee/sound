@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 
 # Configuration constants
-LOWER_FREQ_LIMIT = 110  # Hz
+LOWER_FREQ_LIMIT = 80  # Hz
 UPPER_FREQ_LIMIT = 14080  # Hz
-FREQUENCY_TOLERANCE = 5  # Hz, tolerance for grouping similar frequencies
+CENTS_TOLERANCE = 49  # Tolerance in cents (relative to 100 cents per semitone)
 
 def read_tsv(file_path):
     """Reads a TSV file and returns a list of frequency-amplitude pairs."""
@@ -15,6 +15,10 @@ def read_tsv(file_path):
             values = list(map(float, line.strip().split('\t')))
             frames.append(values)
     return frames
+
+def cents_difference(freq1, freq2):
+    """Calculates the difference in cents between two frequencies."""
+    return 1200 * np.log2(freq2 / freq1)
 
 def group_and_filter_frequencies(frames):
     """Groups similar frequencies within each frame and filters them."""
@@ -38,15 +42,15 @@ def group_and_filter_frequencies(frames):
 
         while len(freqs) > 0:
             ref_freq = freqs[0]
-            mask = (np.abs(freqs - ref_freq) < FREQUENCY_TOLERANCE)
+            mask = np.array([cents_difference(ref_freq, f) < CENTS_TOLERANCE for f in freqs])
             group_freqs = freqs[mask]
             group_amps = amps[mask]
 
             avg_freq = np.mean(group_freqs)
-            avg_amp = np.mean(group_amps)
+            max_amp = np.max(group_amps)
 
             grouped_freqs.append(avg_freq)
-            grouped_amps.append(avg_amp)
+            grouped_amps.append(max_amp)
 
             freqs = freqs[~mask]
             amps = amps[~mask]
@@ -67,10 +71,10 @@ def save_grouped_frequencies(grouped_frames, output_path):
             f.write(frame_str + '\n')
 
 if __name__ == "__main__":
-    # input_file = "/mnt/data/cosine_440_523.25Hz.tsv"
-    # output_file = "/mnt/data/cosine_440_523.25Hz_processed.tsv"
-    input_file = "./in_wav/tsv/other.tsv"
-    output_file = "./in_wav/tsv/other_processed.tsv"    
+    input_file = "./in_wav/tsv/sliding_cosine_1760_to_440Hz.tsv"
+    #input_file = "./in_wav/tsv/other.tsv"
+    #output_file = "./in_wav/tsv/other_reduced.tsv" #reduced frequencies within a frame
+    output_file = "./in_wav/tsv/sliding_reduced.tsv" #reduced frequencies within a frame
 
     frames = read_tsv(input_file)
     grouped_frames = group_and_filter_frequencies(frames)
