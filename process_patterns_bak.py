@@ -1,5 +1,6 @@
 import re
 import statistics
+import json
 
 class Pattern:
     def __init__(self, number, density, lines, uri, content, masks=None, skip_lines=1):
@@ -23,7 +24,7 @@ def parse_file(file_path):
         density = int(match.group('density'))
         lines = int(match.group('lines'))
         uri = match.group('uri')
-        content = match.group('content').strip()
+        content = match.group('content') #.strip() # 
         # Create pattern with default masks and skip_lines
         patterns.append(Pattern(number, density, lines, uri, content))
     
@@ -56,9 +57,10 @@ def filter_patterns(patterns, min_density=None, max_density=None, min_lines=None
 def mask_line(line, mask):
     return ''.join(char if mask_char != '?' else '?' for char, mask_char in zip(line, mask))
 
-def process_patterns(patterns, masks=None, skip_lines=0):
+def process_patterns(patterns_in, masks=None, skip_lines=0):
+    patterns = patterns_in.copy()
     print(f"Processing {len(patterns)} patterns")
-    for pattern in patterns[0:1]:
+    for pattern in patterns:
         lines = pattern.content.split('\n')
         processed_lines = []
         for i, line in enumerate(lines):
@@ -75,6 +77,19 @@ def process_patterns(patterns, masks=None, skip_lines=0):
             processed_lines.append(line)
         pattern.processed_content = '\n'.join(processed_lines)
     return patterns
+
+def save_patterns_to_json(patterns, file_path):
+    patterns_data = [{
+        'number': pattern.number,
+        'density': pattern.density,
+        'lines': pattern.lines,
+        'uri': pattern.uri,
+        'content': pattern.content,
+        'processed_content': pattern.processed_content
+    } for pattern in patterns]
+    
+    with open(file_path, 'w') as json_file:
+        json.dump(patterns_data, json_file, indent=4)
 
 def main(file_path):
     # Load and parse the file
@@ -104,7 +119,13 @@ def main(file_path):
     ]
     skip_lines = 2
     processed_patterns1 = process_patterns(filtered_patterns, masks[0:1], skip_lines)
+    save_patterns_to_json(processed_patterns1, 'processed_patterns1.json')    
     processed_patterns2 = process_patterns(filtered_patterns, masks[1:2], skip_lines)
+    save_patterns_to_json(processed_patterns2, 'processed_patterns2.json')    
+    processed_patterns3 = process_patterns(filtered_patterns, masks[2:3], skip_lines)    
+    save_patterns_to_json(processed_patterns3, 'processed_patterns3.json')    
+    processed_patterns4 = process_patterns(filtered_patterns, masks[3:4], skip_lines)    
+    save_patterns_to_json(processed_patterns4, 'processed_patterns4.json')    
 
     return
     # Display processed patterns
