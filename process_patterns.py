@@ -90,7 +90,7 @@ def main(file_path):
     
     # Filtering patterns based on some example criteria
     filtered_patterns = filter_patterns(patterns, min_density=20, max_density=50, min_lines=5, max_lines=10)
-    filtered_patterns = filter_patterns(patterns, min_density=650, max_density=99999, min_lines=64, max_lines=64)
+    filtered_patterns = filter_patterns(patterns, min_density=850, max_density=99999, min_lines=64, max_lines=64)
     print(f"\nNumber of filtered patterns: {len(filtered_patterns)}")
 
     # Masks

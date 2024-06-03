@@ -27,6 +27,6 @@ def split_jsonl_file(input_file, train_file, test_file, train_ratio=0.8):
 
 # Usage example
 input_file = 'ds.jsonl'
-train_file = 'train_ds.jsonl'
-test_file = 'test_ds.jsonl'
+train_file = 'ds_train.jsonl'
+test_file = 'ds_test.jsonl'
 split_jsonl_file(input_file, train_file, test_file)
