@@ -17,43 +17,32 @@ def read_psg_file(filename):
 def parse_psg_data(data):
     frames = []
     current_frame = [None] * REG_NUM  # Initialize with None to denote uninitialized values
-    state = 'inidata'
-    c_reg = 0
-    r13_changed = False
 
     i = 0
     while i < len(data):
         b = data[i]
-        if state == 'inidata':
-            if b >= 0x00 and b <= 0x0d:
-                c_reg = b
-                state = 'regdata'
-                if b == 13:
-                    r13_changed = True
-            elif b == 0xfd:  # End of PSG data
-                if not r13_changed and current_frame[13] is not None:
-                    current_frame[13] = None
-                frames.append(current_frame.copy())
-                break
-            elif b == 0xfe:  # Skipping multiple frames
-                skip_frames = data[i + 1] * 4
-                for _ in range(skip_frames):
-                    frames.append([None] * REG_NUM)
-                i += 1
-            elif b == 0xff:  # Start of frame marker
-                while i < len(data) and data[i] == 0xff:
-                    if not r13_changed and current_frame[13] is not None:
-                        current_frame[13] = None
-                    frames.append(current_frame.copy())
-                    current_frame = [None] * REG_NUM  # Reset for next frame
-                    r13_changed = False
-                    i += 1
-                continue
+        if b == 0xff:  # Start of frame marker
+            frames.append(current_frame.copy())
+            current_frame = [None] * REG_NUM  # Reset for next frame
+        elif b == 0xfe:  # Skipping multiple frames
+            skip_frames = data[i + 1] * 4
+            for _ in range(skip_frames):
+                frames.append([None] * REG_NUM)
             i += 1
-        elif state == 'regdata':
-            current_frame[c_reg] = b
-            state = 'inidata'
+        elif b == 0xfd:  # End of PSG data
+            frames.append(current_frame.copy())
+            break
+        elif b >= 0x00 and b <= 0x0d:  # AY register
+            reg = b
             i += 1
+            value = data[i]
+            current_frame[reg] = value
+        i += 1
+
+    # Ensure the last frame is appended if it contains any data
+    if any(v is not None for v in current_frame):
+        frames.append(current_frame.copy())
+
     return frames
 
 def write_register_dump(frames, output_filename):
@@ -65,8 +54,7 @@ def write_register_dump(frames, output_filename):
                     output_frame.append('_')
                 else:
                     output_frame.append(str(value))
-            if any(value != '_' for value in output_frame):  # Skip lines with all '_'
-                file.write('\t'.join(output_frame) + '\n')
+            file.write('\t'.join(output_frame) + '\n')
 
 def main(input_filename):
     output_filename = input_filename + '.aydump'
