@@ -19,16 +19,16 @@ def read_aydump_file(filename):
 
 def generate_mask(mixer, tone_mask, noise_mask, envelope_mask):
     mask = []
-    if tone_mask & mixer:
-        mask.append('t')
-    else:
-        mask.append('_')
     if noise_mask & mixer:
         mask.append('n')
     else:
         mask.append('_')
     if envelope_mask & mixer:
         mask.append('e')
+    else:
+        mask.append('_')
+    if tone_mask & mixer:
+        mask.append('t')
     else:
         mask.append('_')
     return ''.join(mask)
@@ -38,36 +38,36 @@ def frame_to_dict(frame):
 
     # Tone periods
     if frame[0] is not None or frame[1] is not None:
-        result['tA'] = ((frame[1] if frame[1] is not None else 0) << 8) | (frame[0] if frame[0] is not None else 0)
+        result['At'] = ((frame[1] if frame[1] is not None else 0) << 8) | (frame[0] if frame[0] is not None else 0)
     if frame[2] is not None or frame[3] is not None:
-        result['tB'] = ((frame[3] if frame[3] is not None else 0) << 8) | (frame[2] if frame[2] is not None else 0)
+        result['Bt'] = ((frame[3] if frame[3] is not None else 0) << 8) | (frame[2] if frame[2] is not None else 0)
     if frame[4] is not None or frame[5] is not None:
-        result['tC'] = ((frame[5] if frame[5] is not None else 0) << 8) | (frame[4] if frame[4] is not None else 0)
+        result['Ct'] = ((frame[5] if frame[5] is not None else 0) << 8) | (frame[4] if frame[4] is not None else 0)
     
     # Volumes
     if frame[8] is not None:
-        result['vA'] = frame[8] & 0x0f
+        result['Av'] = frame[8] & 0x0f
     if frame[9] is not None:
-        result['vB'] = frame[9] & 0x0f
+        result['Bv'] = frame[9] & 0x0f
     if frame[10] is not None:
-        result['vC'] = frame[10] & 0x0f
+        result['Cv'] = frame[10] & 0x0f
     
     # Noise period
     if frame[6] is not None:
-        result['n'] = frame[6] & 0x1f
+        result['N'] = frame[6] & 0x1f
     
     # Envelope period and shape
     if frame[11] is not None or frame[12] is not None:
-        result['ep'] = ((frame[12] if frame[12] is not None else 0) << 8) | (frame[11] if frame[11] is not None else 0)
+        result['Ep'] = ((frame[12] if frame[12] is not None else 0) << 8) | (frame[11] if frame[11] is not None else 0)
     if frame[13] is not None:
-        result['es'] = frame[13] & 0xff
+        result['Es'] = frame[13] & 0xff
     
     # Mixer control
     if frame[7] is not None:
         mixer = frame[7]
-        result['mA'] = generate_mask(mixer, 0x01, 0x08, 0x10)
-        result['mB'] = generate_mask(mixer, 0x02, 0x10, 0x20)
-        result['mC'] = generate_mask(mixer, 0x04, 0x20, 0x40)
+        result['Am'] = generate_mask(mixer, 0x01, 0x08, 0x10)
+        result['Bm'] = generate_mask(mixer, 0x02, 0x10, 0x20)
+        result['Cm'] = generate_mask(mixer, 0x04, 0x20, 0x40)
     
     return result
 
