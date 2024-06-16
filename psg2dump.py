@@ -17,29 +17,40 @@ def read_psg_file(filename):
 def parse_psg_data(data):
     frames = []
     current_frame = [None] * REG_NUM  # Initialize with None to denote uninitialized values
+    state = 'inidata'
+    c_reg = 0
+    r13_changed = False
+
     i = 0
     while i < len(data):
-        value = data[i]
-        if value == 0xFF:  # Start of frame marker
-            if any(v is not None for v in current_frame):  # Only append frames with data
+        b = data[i]
+        if state == 'inidata':
+            if b >= 0x00 and b <= 0x0d:
+                c_reg = b
+                state = 'regdata'
+                if b == 13:
+                    r13_changed = True
+            elif b == 0xfd:  # End of PSG data
+                if not r13_changed and current_frame[13] is not None:
+                    current_frame[13] = None
                 frames.append(current_frame.copy())
-            current_frame = [None] * REG_NUM  # Reset for next frame
-        elif value == 0xFE:  # Skipping multiple frames
-            skip_frames = data[i + 1] * 4
-            for _ in range(skip_frames):
-                frames.append([None] * REG_NUM)
+                break
+            elif b == 0xfe:  # Skipping multiple frames
+                skip_frames = data[i + 1] * 4
+                for _ in range(skip_frames):
+                    frames.append([None] * REG_NUM)
+                i += 1
+            elif b == 0xff:  # Start of frame marker
+                if not r13_changed and current_frame[13] is not None:
+                    current_frame[13] = None
+                frames.append(current_frame.copy())
+                current_frame = [None] * REG_NUM  # Reset for next frame
+                r13_changed = False
             i += 1
-        elif value == 0xFD:  # End of PSG data (not standard but mentioned in some docs)
-            break
-        else:
-            register = value & 0x0F
-            value = data[i + 1]
-            if register < REG_NUM:  # Valid AY register
-                current_frame[register] = value
+        elif state == 'regdata':
+            current_frame[c_reg] = b
+            state = 'inidata'
             i += 1
-        i += 1
-    if any(v is not None for v in current_frame):  # Append the last frame if it has data
-        frames.append(current_frame.copy())
     return frames
 
 def write_register_dump(frames, output_filename):

@@ -23,16 +23,23 @@ def write_psg_file(frames, output_filename):
         file.write(struct.pack('B', 0))  # Version from original file
         file.write(b'\x00' * 11)  # Reserved bytes and unknown bytes
 
+        prevR13 = None
         for frame in frames:
-            file.write(struct.pack('B', 0xFF))  # start of frame marker
+            file.write(struct.pack('B', 0xFF))  # Start of frame marker
             for reg, value in enumerate(frame):
-                print(reg, value)
                 if value is not None:  # Only write if the value is provided
+                    if reg == 13:
+                        prevR13 = value
                     file.write(struct.pack('B', reg))
                     file.write(struct.pack('B', value))
-                    frame_updated = True
+            
+            # Handle R13 specific logic
+            if frame[13] is not None and prevR13 is not None and (frame[13] & 0x0f == prevR13 & 0x0f):
+                prevR13 = frame[13]
+            elif frame[13] is not None:
+                frame[13] = frame[13] & 0x0f
 
-        file.write(struct.pack('B', 0xFF))  # End of PSG data marker
+        file.write(struct.pack('B', 0xFD))  # End of PSG data marker
 
 def main(input_filename):
     frames = read_aydump_file(input_filename)
