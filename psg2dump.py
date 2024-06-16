@@ -37,8 +37,17 @@ def parse_psg_data(data):
 
 def write_register_dump(frames, output_filename):
     with open(output_filename, 'w') as file:
+        previous_frame = [None] * 14
         for frame in frames:
-            file.write('\t'.join(map(str, frame)) + '\n')
+            output_frame = []
+            for i, value in enumerate(frame):
+                if value == previous_frame[i]:
+                    output_frame.append('_')
+                    #output_frame.append(' ')
+                else:
+                    output_frame.append(str(value))
+            file.write('\t'.join(output_frame) + '\n')
+            previous_frame = frame.copy()
 
 def main(input_filename):
     output_filename = input_filename + '.aydump'

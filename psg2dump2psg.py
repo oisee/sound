@@ -5,7 +5,12 @@ def read_aydump_file(filename):
     frames = []
     with open(filename, 'r') as file:
         for line in file:
-            frame = list(map(int, line.strip().split('\t')))
+            frame = []
+            for value in line.strip().split('\t'):
+                if value == '_':
+                    frame.append(None)
+                else:
+                    frame.append(int(value))
             frames.append(frame)
     return frames
 
@@ -18,12 +23,17 @@ def write_psg_file(frames, output_filename):
 
         previous_frame = [0] * 14
         for frame in frames:
+            frame_updated = False
             for reg, value in enumerate(frame):
-                if value != previous_frame[reg]:  # Only write if different from previous frame
+                if value is not None and value != previous_frame[reg]:  # Only write if different from previous frame
                     file.write(struct.pack('B', reg))
                     file.write(struct.pack('B', value))
-            file.write(struct.pack('B', 0xFF))  # End of frame marker
-            previous_frame = frame.copy()
+                    previous_frame[reg] = value
+                    frame_updated = True
+            if frame_updated:
+                file.write(struct.pack('B', 0xFF))  # End of frame marker if any register was updated
+            else:
+                file.write(struct.pack('B', 0xFF))  # End of frame marker if no registers were updated
         
         file.write(struct.pack('B', 0xFD))  # End of PSG data marker
 
@@ -37,8 +47,3 @@ if __name__ == "__main__":
     parser.add_argument('input_filename', nargs='?', default='sync.psg.aydump', help='The input AY register dump file')
     args = parser.parse_args()
     main(args.input_filename)
-
-    # parser = argparse.ArgumentParser(description='Convert a PSG file to an AY register dump.')
-    # parser.add_argument('input_filename', nargs='?', default='sync.psg', help='The input PSG file (default: sync.psg)')
-    # args = parser.parse_args()
-    # main(args.input_filename)
