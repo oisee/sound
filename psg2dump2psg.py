@@ -1,6 +1,8 @@
 import struct
 import argparse
 
+REG_NUM = 14
+
 def read_aydump_file(filename):
     frames = []
     with open(filename, 'r') as file:
@@ -18,24 +20,19 @@ def write_psg_file(frames, output_filename):
     with open(output_filename, 'wb') as file:
         # Write PSG header
         file.write(b'PSG\x1a')
-        file.write(struct.pack('B', 1))  # Version 1
+        file.write(struct.pack('B', 0))  # Version from original file
         file.write(b'\x00' * 11)  # Reserved bytes and unknown bytes
 
-        previous_frame = [0] * 14
         for frame in frames:
-            frame_updated = False
+            file.write(struct.pack('B', 0xFF))  # start of frame marker
             for reg, value in enumerate(frame):
-                if value is not None and value != previous_frame[reg]:  # Only write if different from previous frame
+                print(reg, value)
+                if value is not None:  # Only write if the value is provided
                     file.write(struct.pack('B', reg))
                     file.write(struct.pack('B', value))
-                    previous_frame[reg] = value
                     frame_updated = True
-            if frame_updated:
-                file.write(struct.pack('B', 0xFF))  # End of frame marker if any register was updated
-            else:
-                file.write(struct.pack('B', 0xFF))  # End of frame marker if no registers were updated
-        
-        file.write(struct.pack('B', 0xFD))  # End of PSG data marker
+
+        file.write(struct.pack('B', 0xFF))  # End of PSG data marker
 
 def main(input_filename):
     frames = read_aydump_file(input_filename)

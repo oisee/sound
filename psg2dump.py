@@ -1,6 +1,8 @@
 import struct
 import argparse
 
+REG_NUM = 14
+
 def read_psg_file(filename):
     with open(filename, 'rb') as file:
         header = file.read(4)
@@ -14,40 +16,43 @@ def read_psg_file(filename):
 
 def parse_psg_data(data):
     frames = []
-    current_frame = [0] * 14
+    current_frame = [None] * REG_NUM  # Initialize with None to denote uninitialized values
     i = 0
     while i < len(data):
         value = data[i]
-        if value == 0xFF:  # End of frame marker
-            frames.append(current_frame.copy())
+        if value == 0xFF:  # Start of frame marker
+            if any(v is not None for v in current_frame):  # Only append frames with data
+                frames.append(current_frame.copy())
+            current_frame = [None] * REG_NUM  # Reset for next frame
         elif value == 0xFE:  # Skipping multiple frames
             skip_frames = data[i + 1] * 4
-            frames.extend([current_frame.copy()] * skip_frames)
+            for _ in range(skip_frames):
+                frames.append([None] * REG_NUM)
             i += 1
         elif value == 0xFD:  # End of PSG data (not standard but mentioned in some docs)
             break
         else:
             register = value & 0x0F
             value = data[i + 1]
-            if register < 14:  # Valid AY register
+            if register < REG_NUM:  # Valid AY register
                 current_frame[register] = value
             i += 1
         i += 1
+    if any(v is not None for v in current_frame):  # Append the last frame if it has data
+        frames.append(current_frame.copy())
     return frames
 
 def write_register_dump(frames, output_filename):
     with open(output_filename, 'w') as file:
-        previous_frame = [None] * 14
         for frame in frames:
             output_frame = []
-            for i, value in enumerate(frame):
-                if value == previous_frame[i]:
+            for value in frame:
+                if value is None:
                     output_frame.append('_')
-                    #output_frame.append(' ')
                 else:
                     output_frame.append(str(value))
-            file.write('\t'.join(output_frame) + '\n')
-            previous_frame = frame.copy()
+            if any(value != '_' for value in output_frame):  # Skip lines with all '_'
+                file.write('\t'.join(output_frame) + '\n')
 
 def main(input_filename):
     output_filename = input_filename + '.aydump'
