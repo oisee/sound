@@ -77,7 +77,7 @@ def convert_to_jsonl(frames, output_filename):
             frame_dict = frame_to_dict(frame)
             if not frame_dict:
                 frame_dict = {}
-            file.write(json.dumps(frame_dict) + '\n')
+            file.write(json.dumps(frame_dict, sort_keys=True) + '\n')
 
 def main(input_filename, output_filename):
     frames = read_aydump_file(input_filename)
