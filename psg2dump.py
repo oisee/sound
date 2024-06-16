@@ -41,11 +41,14 @@ def parse_psg_data(data):
                     frames.append([None] * REG_NUM)
                 i += 1
             elif b == 0xff:  # Start of frame marker
-                if not r13_changed and current_frame[13] is not None:
-                    current_frame[13] = None
-                frames.append(current_frame.copy())
-                current_frame = [None] * REG_NUM  # Reset for next frame
-                r13_changed = False
+                while i < len(data) and data[i] == 0xff:
+                    if not r13_changed and current_frame[13] is not None:
+                        current_frame[13] = None
+                    frames.append(current_frame.copy())
+                    current_frame = [None] * REG_NUM  # Reset for next frame
+                    r13_changed = False
+                    i += 1
+                continue
             i += 1
         elif state == 'regdata':
             current_frame[c_reg] = b
